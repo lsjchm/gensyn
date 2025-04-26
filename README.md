@@ -1,1 +1,1 @@
-wget -O gensyn.sh https://raw.githubusercontent.com/lsjchm/gensyn/gensyn.sh && chmod +x gensyn.sh && ./gensyn.sh
+wget -O gensyn.sh https://raw.githubusercontent.com/lsjchm/gensyn/main/gensyn.sh && chmod +x gensyn.sh && ./gensyn.sh
