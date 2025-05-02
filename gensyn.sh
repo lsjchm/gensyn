@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 lsjchm="gensyn"
 update_script() {
     # 指定URL
-    update_url="https://raw.githubusercontent.com/lsjchm/$lsjchm/main/$lsjchm.sh"
+    update_url="https://raw.githubusercontent.com/lsjchm/gensyn/main/gensyn.sh"
     file_name=$(basename "$update_url")
 
     # 下载脚本文件
