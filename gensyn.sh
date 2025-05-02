@@ -26,7 +26,7 @@ curl -s https://raw.githubusercontent.com/sk1fas/logo-sk1fas/main/logo-sk1fas.sh
     echo -e "${CYAN}3) 日志查看器${NC}"
     echo -e "${CYAN}4) 删除节点${NC}"
 
-    echo -e "${YELLOW}输入名称：${NC} "
+    echo -e "${YELLOW}输入1-4：${NC} "
     read choice
 
     case $choice in
