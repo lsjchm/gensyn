@@ -1,192 +1,147 @@
 #!/bin/bash
 
-# 设置版本号
-current_version=20250425008
+# 脚本保存路径
+SCRIPT_PATH="$HOME/gensyn-ai.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-# Program name
-lsjchm="gensyn"
-update_script() {
-    # 指定URL
-    update_url="https://raw.githubusercontent.com/lsjchm/gensyn/main/gensyn.sh"
-    file_name=$(basename "$update_url")
+# 安装 gensyn-ai 节点
+function install_gensyn_ai_node() {
+    # 更新系统并安装必要软件包
+    sudo apt-get update 
+    sudo apt-get install -y curl iptables build-essential git wget lz4 jq make gcc nano automake autoconf \
+        tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip \
+        python3 python3-pip python3.10-venv xdg-utils
 
-    # 下载脚本文件
-    tmp=$(date +%s)
-    timeout 10s curl -s -o "$HOME/$tmp" -H "Cache-Control: no-cache" "$update_url?$tmp"
-    exit_code=$?
-    if [[ $exit_code -eq 124 ]]; then
-        echo "命令超时"
-        return 1
-    elif [[ $exit_code -ne 0 ]]; then
-        echo "下载失败"
-        return 1
-    fi
-
-    # 检查是否有新版本可用
-    latest_version=$(grep -oP 'current_version=([0-9]+)' $HOME/$tmp | sed -n 's/.*=//p')
-
-    if [[ "$latest_version" -gt "$current_version" ]]; then
-        clear
-        echo ""
-        # 提示需要更新脚本
-        printf "\033[31m脚本有新版本可用！当前版本：%s，最新版本：%s\033[0m\n" "$current_version" "$latest_version"
-        echo "正在更新..."
-        sleep 3
-        mv $HOME/$tmp $HOME/$file_name
-        chmod +x $HOME/$file_name
-        exec "$HOME/$file_name"
+    # **安装 nvm**
+    if ! command -v nvm &> /dev/null; then
+        echo "正在安装 NVM..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+        source ~/.bashrc
+        source ~/.profile
+        echo "NVM 安装完成"
     else
-        # 脚本是最新的
-        rm -f $tmp
+        echo "NVM 已安装"
     fi
 
-}
-
-# 节点安装
-function install_node() {
-
-    export NEEDRESTART_MODE=a
-
-    # 定义目标swap大小（单位：GB）
-    TARGET_SWAP_GB=32
-
-    # 获取当前swap大小（单位：KB）
-    CURRENT_SWAP_KB=$(free -k | awk '/Swap:/ {print $2}')
-
-    # 转换为GB
-    CURRENT_SWAP_GB=$((CURRENT_SWAP_KB / 1024 / 1024))
-
-    echo "当前Swap大小: ${CURRENT_SWAP_GB}GB"
-
-    if [ "$CURRENT_SWAP_GB" -lt "$TARGET_SWAP_GB" ]; then
-
-        # 临时关闭所有swap
-        swapoff -a
-
-        # 删除所有swap分区（如果有）
-        sed -i '/swap/d' /etc/fstab
-
-        # 创建新的swap文件
-        SWAPFILE=/swapfile
-        fallocate -l ${TARGET_SWAP_GB}G $SWAPFILE
-        chmod 600 $SWAPFILE
-        mkswap $SWAPFILE
-        swapon $SWAPFILE
-
-        # 添加到fstab
-        echo "$SWAPFILE none swap sw 0 0" >> /etc/fstab
-
-        # 调整swappiness参数（可选）
-        echo "vm.swappiness = 10" >> /etc/sysctl.conf
-        sysctl -p
-
-        echo "Swap已调整为${TARGET_SWAP_GB}GB"
-    fi
-
-    sudo apt-get update && sudo apt-get upgrade -y
-    sudo apt install screen curl iptables build-essential git wget lz4 jq make gcc nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip libleveldb-dev  -y
-    
-    sudo apt update
-    sudo apt install python3.10 python3.10-venv python3.10-dev -y
-    sudo apt install python-is-python3
-    python --version
-    sudo apt-get update
-    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-    sudo apt-get install nodejs -y
-    node -v
-    sudo npm install -g yarn
-    yarn -v
-    curl -o- -L https://yarnpkg.com/install.sh | bash
-    export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+    # **使用 nvm 安装 Node.js 18**
     source ~/.bashrc
+    source ~/.profile
+    nvm install 18
+    nvm use 18
+    nvm alias default 18
 
-    git clone https://github.com/lsjchm/rl-swarm
-    cd rl-swarm
-    python -m venv .venv
+    # 确保 Node.js 版本正确
+    echo "当前 Node.js 版本：$(node -v)"
+    echo "当前 npm 版本：$(npm -v)"
+
+    # **安装 Yarn**
+    echo "正在安装 Yarn..."
+    npm install -g yarn
+    echo "Yarn 安装完成"
+
+    # 检测 Docker 是否安装
+    if ! command -v docker &> /dev/null; then
+        echo "Docker 未安装，正在安装 Docker..."
+        curl -fsSL https://get.docker.com | sh
+        sudo usermod -aG docker $USER
+        echo "Docker 安装完成，请重新登录以应用 Docker 权限"
+    else
+        echo "Docker 已安装"
+    fi
+
+    # 克隆 GitHub 仓库并进入目录
+    git clone https://github.com/gensyn-ai/rl-swarm/ || true
+    cd rl-swarm || exit
+
+    # **修改 run_rl_swarm.sh**
+    if [ -f "run_rl_swarm.sh" ]; then
+        sed -i 's#open http://localhost:3000#xdg-open http://localhost:3000 2>/dev/null || echo "Please open http://localhost:3000 in your browser"#' run_rl_swarm.sh    
+        sed -i 's#python -m#python3 -m#g' run_rl_swarm.sh
+        sed -i 's#nvidia-smi#nvidia-smi2#g' run_rl_swarm.sh
+        sed -i 's#set -euo#set -eo#g' run_rl_swarm.sh
+	sed -i '/^export ORG_ID/ a export CUDA_VISIBLE_DEVICES=\'\'' ' run_rl_swarm.sh
+        echo "已修改 run_rl_swarm.sh"
+    else
+        echo "警告: run_rl_swarm.sh 文件未找到，无法修改"
+    fi
+
+    # 创建 Python 虚拟环境
+    python3 -m venv .venv
     source .venv/bin/activate
 
-    cd $HOME/rl-swarm
-    sed -i '1i # ~/.bashrc: executed by bash(1) for non-login shells.\n\n# If not running interactively, don'\''t do anything\ncase $- in\n    *i*) ;;\n    *) return;;\nesac\n' ~/.bashrc
-    screen -S rl_swarm -dm bash -c 'source .venv/bin/activate && ./run_rl_swarm.sh'
+    # 修复 protobuf 版本冲突（强制降级）
+    echo "正在修复 protobuf 版本冲突..."
+    pip install "protobuf>=5.29.0,<6.0.0" --force-reinstall
+    echo "protobuf 版本已更新"
 
-	echo "部署完成，运行脚本2启动节点即可..."
+    # **安装 Node.js 依赖**
+    rm -rf node_modules package-lock.json yarn.lock
+    yarn install
+
+    # 使用 screen 启动 RL Swarm
+    if [ -f "./run_rl_swarm.sh" ]; then
+        chmod +x run_rl_swarm.sh
+        screen -S swarm -d -m bash -c "export OMP_NUM_THREADS=20 &&python3 -m venv .venv && source .venv/bin/activate &&./run_rl_swarm.sh"
+        echo "Swarm 已在后台运行。使用 'screen -r swarm' 进入后台进行下一步操作。"
+    else
+        screen -S swarm -d -m bash -c "python main.py"
+        echo "未找到 run_rl_swarm.sh，已使用 Python 方式运行 Swarm。"
+        echo "Swarm 已在后台运行。使用 'screen -r swarm' 进入后台进行下一步操作。"
+    fi
+
+    read -n 1 -s -r -p "按任意键返回主菜单..."
+    main_menu
 }
 
-# 查看日志
-function view_logs(){
-	screen -r rl_swarm
+# 删除 gensyn-ai 节点
+function delete_gensyn_ai_node() {
+    echo "正在删除 gensyn-ai 节点..."
+    sudo systemctl stop docker
+    sudo rm -rf $HOME/rl-swarm
+    sudo docker system prune -a -f
+    sudo systemctl start docker
+    echo "gensyn-ai 节点已删除，Docker 已清理。"
+    read -n 1 -s -r -p "按任意键返回主菜单..."
+    main_menu
 }
 
-# 启动节点
-function start_node(){
-    cd $HOME/rl-swarm
-    screen -S rl_swarm -dm bash -c 'source .venv/bin/activate && ./run_rl_swarm.sh'
-}
-
-# 停止节点
-function stop_node(){
-	screen -S rl_swarm -X quit
-	echo "$lsjchm 节点已停止"
-}
-
-# 卸载节点
-function uninstall_node(){
-	echo "你确定要卸载 $lsjchm 节点程序吗？这将会删除所有相关的数据。[Y/N]"
-	read -r -p "请确认: " response
-    case "$response" in
-        [yY][eE][sS]|[yY]) 
-            echo "开始卸载节点程序..."
-            stop_node
-			rm -rf $PROJECT_DIR
-            sudo rm -f /etc/systemd/system/$lsjchm.service
-            sudo systemctl daemon-reload
-			echo "卸载完成。"
-            ;;
-        *)
-            echo "取消卸载操作。"
-            ;;
+# 日志查看函数
+function view_logs() {
+    case $1 in
+        "swarm") cd /root/rl-swarm && docker-compose logs -f swarm_node ;;
+        "web") cd /root/rl-swarm && docker-compose logs -f fastapi ;;
+        "telemetry") cd /root/rl-swarm && docker-compose logs -f otel-collector ;;
     esac
+    read -n 1 -s -r -p "按任意键返回主菜单..."
+    main_menu
 }
 
 # 主菜单
 function main_menu() {
-	while true; do
-	    clear
-	    echo "================== $lsjchm 一键部署脚本=================="
-		echo "当前版本：$current_version"
-		echo "最低配置：4C16G100G；推荐配置：8C32G300G；"
-	    echo "请选择要执行的操作:"
-	    echo "1. 部署节点 install_node"
-	    echo "2. 查看状态 view_logs"
-	    echo "3. 查看日志 view_logs"
-	    echo "4. 停止节点 stop_node"
-	    echo "5. 启动节点 start_node"
-	    echo "1618. 卸载节点 uninstall_node"
-	    echo "0. 退出脚本 exit"
-	    read -p "请输入选项: " OPTION
-	
-	    case $OPTION in
-	    1) install_node ;;
-	    2) view_logs ;;
-	    3) view_logs ;;
-	    4) stop_node ;;
-	    5) start_node ;;
-	    1618) uninstall_node ;;
-	    0) echo "退出脚本。"; exit 0 ;;
-	    *) echo "无效选项，请重新输入。"; sleep 3 ;;
-	    esac
-	    echo "按任意键返回主菜单..."
-        read -n 1
+    while true; do
+        clear
+        echo "脚本由QQ178003849编写，免费开源，请勿相信收费"
+        echo "如有问题，可联系QQ，仅此只有一个号"
+        echo "================================================================"
+        echo "退出脚本，请按 Ctrl + C 退出"
+        echo "请选择操作:"
+        echo "1. 安装 gensyn-ai 节点"
+        echo "2. 查看 RL Swarm 日志"
+        echo "3. 查看 Web UI 日志"
+        echo "4. 查看 Telemetry 日志"
+        echo "5. 删除 gensyn-ai 节点"
+        echo "6. 退出"
+        read -p "请输入选项 [1-6]: " choice
+        case $choice in
+            1) install_gensyn_ai_node ;;
+            2) view_logs "swarm" ;;
+            3) view_logs "web" ;;
+            4) view_logs "telemetry" ;;
+            5) delete_gensyn_ai_node ;;
+            6) exit 0 ;;
+            *) echo "无效选项，请重试..."; sleep 2 ;;
+        esac
     done
 }
 
-# 检查更新
-update_script
-
-# 显示主菜单
+# 运行主菜单
 main_menu
