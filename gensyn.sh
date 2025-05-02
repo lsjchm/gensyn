@@ -1,55 +1,55 @@
 #!/bin/bash
 
-# Цвета текста
+# 文本颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
-NC='\033[0m' # Нет цвета (сброс цвета)
+NC='\033[0m' # 没有颜色（重置颜色
 
-# Проверка наличия curl и установка, если не установлен
+# 检查是否存在Curl并安装（如果未安装）
 if ! command -v curl &> /dev/null; then
     sudo apt update
     sudo apt install curl -y
 fi
 sleep 1
 
-# Отображаем логотип
+# 显示徽标
 curl -s https://raw.githubusercontent.com/sk1fas/logo-sk1fas/main/logo-sk1fas.sh | bash
 
-# Меню
-    echo -e "${YELLOW}Выберите действие:${NC}"
-    echo -e "${CYAN}1) Установка ноды${NC}"
-    echo -e "${CYAN}2) Обновление ноды${NC}"
-    echo -e "${CYAN}3) Просмотр логов${NC}"
-    echo -e "${CYAN}4) Удаление ноды${NC}"
+# 菜单
+    echo -e "${YELLOW}选择操作:${NC}"
+    echo -e "${CYAN}1) 节点安装${NC}"
+    echo -e "${CYAN}2) 更新节点${NC}"
+    echo -e "${CYAN}3) 日志查看器${NC}"
+    echo -e "${CYAN}4) 删除节点${NC}"
 
-    echo -e "${YELLOW}Введите номер:${NC} "
+    echo -e "${YELLOW}输入名称：${NC} "
     read choice
 
     case $choice in
         1)
-            echo -e "${BLUE}Установка ноды Gensyn...${NC}"
+            echo -e "${BLUE}安装Gensyn节点...${NC}"
 
-            # Обновление и установка зависимостей
+            # 更新和安装依赖关系
             sudo apt-get update && sudo apt-get upgrade -y
             sudo apt install screen curl iptables build-essential git wget lz4 jq make gcc nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip libleveldb-dev  -y
 
             
-            # Проверка наличия Docker
+            # 检查可用的Docker
             if ! command -v docker &> /dev/null; then
-                echo -e "${BLUE}Docker не установлен. Устанавливаем Docker...${NC}"
+                echo -e "${BLUE}Docker没有安装。安装Docker..${NC}"
                 sudo apt update
                 sudo apt install docker.io -y
-                # Запуск Docker-демона, если он не запущен
+                # 启动docker守护进程，如果它没有运行
                 sudo systemctl enable --now docker
             fi
             
-            # Проверка наличия Docker Compose
+            # 检查Docker Compose
             if ! command -v docker-compose &> /dev/null; then
-                echo -e "${BLUE}Docker Compose не установлен. Устанавливаем Docker Compose...${NC}"
+                echo -e "${BLUE}Docker Compose没有安装。安装Docker Compose...${NC}"
                 sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                 sudo chmod +x /usr/local/bin/docker-compose
             fi
@@ -76,11 +76,11 @@ curl -s https://raw.githubusercontent.com/sk1fas/logo-sk1fas/main/logo-sk1fas.sh
             npm install viem@2.22.6
             cd
 
-            echo -e "${RED}Вернитесь к текстовому гайду и следуйте дальнейшим инструкциям!${NC}"
+            echo -e "${RED}返回文本指南并按照以下说明进行操作！${NC}"
             ;;
 
         2)
-            echo -e "${BLUE}Перейдите в текстовый гайд и выполните инструкции с раздела с обновлением!${NC}"
+            echo -e "${BLUE}转到文本指南并按照更新部分中的说明进行操作！${NC}"
             ;;
 
         3)
@@ -89,39 +89,39 @@ curl -s https://raw.githubusercontent.com/sk1fas/logo-sk1fas/main/logo-sk1fas.sh
             ;;
             
         4)
-            echo -e "${BLUE}Удаление ноды Gensyn...${NC}"
+            echo -e "${BLUE}删除Gensyn节点...${NC}"
 
-            # Находим все сессии screen, содержащие "gensyn"
+            # 找到所有包含“gensyn”的屏幕会话
             SESSION_IDS=$(screen -ls | grep "gensyn" | awk '{print $1}' | cut -d '.' -f 1)
     
-            # Если сессии найдены, удаляем их
+            # 如果找到会话，删除它们
             if [ -n "$SESSION_IDS" ]; then
-                echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
+                echo -e "${BLUE}使用ID结束屏幕会话： $SESSION_IDS${NC}"
                 for SESSION_ID in $SESSION_IDS; do
                     screen -S "$SESSION_ID" -X quit
                 done
             else
-                echo -e "${BLUE}Сессии screen для ноды Gensyn не найдены, продолжаем удаление${NC}"
+                echo -e "${BLUE}没有找到Gensyn Noda的屏幕会话，继续删除${NC}"
             fi
 
-            # Удаление папки
+            # 删除文件夹
             if [ -d "$HOME/rl-swarm" ]; then
                 rm -rf $HOME/rl-swarm
-                echo -e "${GREEN}Директория ноды удалена.${NC}"
+                echo -e "${GREEN}Noda目录已删除${NC}"
             else
-                echo -e "${RED}Директория ноды не найдена.${NC}"
+                echo -e "${RED}没有找到节点目录.${NC}"
             fi
 
-            echo -e "${GREEN}Нода Gensyn успешно удалена!${NC}"
+            echo -e "${GREEN}重命名Gensyn!${NC}"
 
-            # Завершающий вывод
+            # 输入输出
             echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${GREEN}Sk1fas Journey!${NC}"
-            echo -e "${CYAN}Telegram https://t.me/Sk1fasCryptoJourney${NC}"
+            echo -e "${GREEN}HMKK!${NC}"
+            echo -e "${CYAN}QQ:178003849${NC}"
             sleep 1
             ;;
 
         *)
-            echo -e "${RED}Неверный выбор. Пожалуйста, введите номер от 1 до 4!${NC}"
+            echo -e "${RED}错误的选择。请输入1到4的号码！${NC}"
             ;;
     esac
