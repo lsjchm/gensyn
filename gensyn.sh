@@ -49,7 +49,7 @@ function install_gensyn_ai_node() {
     fi
 
     # 克隆 GitHub 仓库并进入目录
-    git clone https://github.com/gensyn-ai/rl-swarm/ || true
+    git clone https://github.com/lsjchm/rl-swarm/ || true
     cd rl-swarm || exit
 
     # **修改 run_rl_swarm.sh**
