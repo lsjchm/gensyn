@@ -17,7 +17,7 @@ fi
 sleep 1
 
 # 显示徽标
-curl -s https://raw.githubusercontent.com/sk1fas/logo-sk1fas/main/logo-sk1fas.sh | bash
+curl -s https://raw.githubusercontent.com/lsjchm/gensyn/refs/heads/main/logo.sh | bash
 
 # 菜单
     echo -e "${YELLOW}选择操作:${NC}"
